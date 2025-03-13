@@ -1,0 +1,68 @@
+name: Deploy Supabase with Docker Compose
+
+on:
+  push:
+    branches:
+      - master  # Trigger on push to master branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout the repository code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Generate .env file with secrets and variables
+      - name: Generate .env file
+        run: |
+            mv .env.example .env
+            echo "POSTGRES_PASSWORD=${secrets.POSTGRES_PASSWORD}" >> .env
+            echo "JWT_SECRET=${secrets.JWT_SECRET}" >> .env
+            echo "ANON_KEY=${secrets.ANON_KEY}" >> .env
+            echo "SERVICE_ROLE_KEY=${secrets.SERVICE_ROLE_KEY}" >> .env
+            echo "DASHBOARD_USERNAME=${secrets.DASHBOARD_USERNAME}" >> .env
+            echo "DASHBOARD_PASSWORD=${secrets.DASHBOARD_PASSWORD}" >> .env
+            echo "SECRET_KEY_BASE=${secrets.SECRET_KEY_BASE}" >> .env
+            echo "VAULT_ENC_KEY=${secrets.VAULT_ENC_KEY}" >> .env
+
+      # Step 3: Set up SSH key
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: unnecessary
+
+      # Step 4: Add Known Hosts
+      - name: Add Known Hosts
+        run: |
+          ssh-keyscan -H ${{ vars.SERVER_DOMAIN }} >> ~/.ssh/known_hosts
+
+      # Step 5: Deploy with Docker Compose
+      - name: Deploy with Docker Compose
+        run: |
+          # Transfer files (including .env) to server
+          rsync -avz --progress --delete --exclude '.git' -e "ssh" ./ ${{ vars.SERVER_USER }}@${{ vars.SERVER_DOMAIN }}:~/supabase/
+
+          # SSH to deploy with minimal downtime
+          ssh ${{ vars.SERVER_USER }}@${{ vars.SERVER_DOMAIN }} << 'EOF'
+            mkdir -p ~/supabase
+            cd ~/supabase
+
+            # Store deployment version
+            echo "${{ github.sha }}" > deploy_version.txt
+
+            # Pull the latest changes from https://github.com/supabase/supabase
+            git clone --filter=blob:none --no-checkout https://github.com/supabase/supabase
+            cd supabase
+            git sparse-checkout set --cone docker && git checkout master
+            # Go to the docker folder
+            copy .env ~/supabase/docker/.env
+            cd docker
+            docker compose pull
+            docker compose up -d
+
+            # Cleanup
+            docker image prune -f
+            docker container prune -f
+          EOF
