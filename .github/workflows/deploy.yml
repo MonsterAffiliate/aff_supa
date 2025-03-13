@@ -42,7 +42,7 @@ jobs:
       - name: Deploy with Docker Compose
         run: |
           # Transfer files (including .env) to server
-          rsync -avz --progress --delete --exclude '.git' -e "ssh" ./ ${{ vars.SERVER_USER }}@${{ vars.SERVER_DOMAIN }}:~/supabase/
+          rsync -avz --progress --delete --exclude '.git' --exclude '.github' --exclude 'supabase' -e "ssh" ./ ${{ vars.SERVER_USER }}@${{ vars.SERVER_DOMAIN }}:~/supabase/
 
           # SSH to deploy with minimal downtime
           ssh ${{ vars.SERVER_USER }}@${{ vars.SERVER_DOMAIN }} << 'EOF'
