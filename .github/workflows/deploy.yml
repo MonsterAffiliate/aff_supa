@@ -17,14 +17,14 @@ jobs:
       - name: Generate .env file
         run: |
             mv .env.example .env
-            echo "POSTGRES_PASSWORD=${secrets.POSTGRES_PASSWORD}" >> .env
-            echo "JWT_SECRET=${secrets.JWT_SECRET}" >> .env
-            echo "ANON_KEY=${secrets.ANON_KEY}" >> .env
-            echo "SERVICE_ROLE_KEY=${secrets.SERVICE_ROLE_KEY}" >> .env
-            echo "DASHBOARD_USERNAME=${secrets.DASHBOARD_USERNAME}" >> .env
-            echo "DASHBOARD_PASSWORD=${secrets.DASHBOARD_PASSWORD}" >> .env
-            echo "SECRET_KEY_BASE=${secrets.SECRET_KEY_BASE}" >> .env
-            echo "VAULT_ENC_KEY=${secrets.VAULT_ENC_KEY}" >> .env
+            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+            echo "ANON_KEY=${{ secrets.ANON_KEY }}" >> .env
+            echo "SERVICE_ROLE_KEY=${{ secrets.SERVICE_ROLE_KEY }}" >> .env
+            echo "DASHBOARD_USERNAME=${{ vars.DASHBOARD_USERNAME }}" >> .env
+            echo "DASHBOARD_PASSWORD=${{ secrets.DASHBOARD_PASSWORD }}" >> .env
+            echo "SECRET_KEY_BASE=${{ secrets.SECRET_KEY_BASE }}" >> .env
+            echo "VAULT_ENC_KEY=${{ secrets.VAULT_ENC_KEY }}" >> .env
 
       # Step 3: Set up SSH key
       - name: Install SSH Key
